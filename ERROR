@@ -1,0 +1,89 @@
+Contexto y Problemas Comunes al Usar useContext en React
+El hook useContext permite consumir datos de un contexto proporcionado por un componente padre en React. Aunque es muy útil, puede ocasionar confusiones o errores si la configuración no es correcta. A continuación, se explican las situaciones comunes que causan problemas y cómo resolverlas.
+
+1. El componente no ve el valor del proveedor (Provider)
+Causa 1: El Provider está mal ubicado
+Si llamas a useContext en un componente que está en el mismo nivel o por encima de donde está el <SomeContext.Provider>, no podrá acceder al valor del contexto. Esto se debe a que el proveedor debe envolver todos los componentes que consumen el contexto.
+
+Solución:
+Asegúrate de que el Provider esté por encima de cualquier componente que use useContext.
+
+jsx
+Copiar código
+// 🚩 Esto no funciona porque el Provider está en el mismo componente.
+function App() {
+  const theme = useContext(ThemeContext); // Error: no hay Provider por encima
+  return (
+    <ThemeContext.Provider value="dark">
+      <Child />
+    </ThemeContext.Provider>
+  );
+}
+
+// ✅ Solución: mueve el Provider fuera del componente que llama a useContext.
+function App() {
+  return (
+    <ThemeContext.Provider value="dark">
+      <Child />
+    </ThemeContext.Provider>
+  );
+}
+Causa 2: El Provider no envuelve correctamente los componentes
+Si olvidas envolver el árbol de componentes con el Provider o lo colocas en una parte diferente del árbol, los componentes que llaman a useContext no podrán acceder al valor.
+
+Solución:
+Revisa tu jerarquía de componentes. Usa React DevTools para verificar si el Provider está envolviendo correctamente a los componentes consumidores.
+
+Causa 3: Problema con herramientas de compilación
+En ciertos casos, especialmente al trabajar con monorepositorios o enlaces simbólicos, SomeContext puede referirse a dos objetos diferentes en distintos paquetes.
+
+Solución:
+Asegúrate de que SomeContext sea el mismo objeto en todos los niveles:
+
+Declara el contexto en un solo lugar.
+
+Verifica en la consola del navegador:
+
+js
+Copiar código
+console.log(window.SomeContext1 === window.SomeContext2); // Debería ser true
+Si no son iguales, corrige el problema en tu configuración de herramientas (por ejemplo, ajustando node_modules o eliminando duplicados).
+
+2. useContext siempre devuelve undefined
+Causa 1: Provider sin un value explícito
+Si no pasas un valor a la propiedad value del Provider, se interpretará como value={undefined}, lo que causa que useContext retorne undefined.
+
+jsx
+Copiar código
+// 🚩 Esto no funciona porque no se pasa el valor "value".
+<ThemeContext.Provider>
+  <Child />
+</ThemeContext.Provider>
+
+// ✅ Solución: Pasa un valor explícito a "value".
+<ThemeContext.Provider value="dark">
+  <Child />
+</ThemeContext.Provider>
+Causa 2: Uso incorrecto de la propiedad
+El Provider espera una propiedad llamada value. Si utilizas otro nombre, el contexto no funcionará y verás una advertencia en la consola.
+
+jsx
+Copiar código
+// 🚩 Esto no funciona porque la propiedad debe llamarse "value".
+<ThemeContext.Provider theme="dark">
+  <Child />
+</ThemeContext.Provider>
+
+// ✅ Solución: Usa la propiedad correcta.
+<ThemeContext.Provider value="dark">
+  <Child />
+</ThemeContext.Provider>
+Nota sobre el valor predeterminado (defaultValue)
+El valor predeterminado pasado a createContext(defaultValue) solo se usa cuando no hay ningún Provider en el árbol. Si hay un Provider con value={undefined}, ese valor (undefined) será el contexto proporcionado.
+
+3. Consejos para Evitar Problemas
+Siempre usa un Provider adecuado: Asegúrate de que cada componente consumidor esté dentro del árbol de un Provider válido.
+Valida el contexto: Usa un valor predeterminado al crear el contexto para evitar problemas inesperados.
+React DevTools es tu amigo: Úsalo para inspeccionar el árbol de componentes y verificar la jerarquía.
+Pruebas unitarias: Simula el árbol completo con el Provider al probar componentes que consumen contexto.
+Estos pasos te ayudarán a configurar y usar contextos en React de manera correcta, evitando los errores más comunes.
